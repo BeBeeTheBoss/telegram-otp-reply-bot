@@ -11,6 +11,14 @@ const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
 bot.on("photo", async (msg) => {
+  await handleOtpRequest(msg);
+});
+
+bot.on("edited_message_caption", async (msg) => {
+  await handleOtpRequest(msg);
+});
+
+async function handleOtpRequest(msg) {
   const chatId = msg.chat.id;
   const caption = msg.caption;
 
@@ -27,8 +35,8 @@ bot.on("photo", async (msg) => {
       const phoneRegex = /^09\d{7,15}$/;
 
       if (phoneRegex.test(text)) {
-        bot.sendMessage(chatId, `ရှာပေးနေပါတယ် ခဏစောင့်ပေးပါနော်`);
-        searchOtp(chatId, text);
+        // bot.sendMessage(chatId, `ရှာပေးနေပါတယ် ခဏစောင့်ပေးပါနော်`);
+        searchOtp(chatId, text, msg.message_id);
       } else {
         bot.sendMessage(
           chatId,
@@ -37,12 +45,10 @@ bot.on("photo", async (msg) => {
       }
     }
   }
-
-  // Regex: match "otp <digits>" (case-insensitive)
-});
+}
 
 // ===== Scrape SMS logs =====
-async function searchOtp(chatId, requested_phone) {
+async function searchOtp(chatId, requested_phone, messageId) {
   try {
     // Step 2: Get SMS logs
     const requested_phone_fixed = "+959" + requested_phone.slice(2);
@@ -69,21 +75,22 @@ async function searchOtp(chatId, requested_phone) {
     });
 
     if (!otp_message) {
-      bot.sendMessage(
-        chatId,
-        `${requested_phone} အတွက် OTP ရှာလို့မတွေ့ဘူးနော်`
-      );
+      bot.sendMessage(chatId, `${requested_phone} အတွက် OTP မရှိဘူးနော်`, {
+        reply_to_message_id: messageId,
+      });
     } else {
-      bot.sendMessage(
-        chatId,
-        `OTP message လေးရပါပြီနော် 😎 :\n\n${otp_message}`
-      );
+      const sixDigit = otp_message.match(/\b\d{6}\b/g);
+      const otp_code = sixDigit[0];
+
+      bot.sendMessage(chatId, `${otp_code}`, {
+        reply_to_message_id: messageId,
+      });
     }
   } catch (err) {
     console.error("Error fetching OTP:", err.message);
     bot.sendMessage(
       chatId,
-      "OTP ထုတ်ယူရာတွင် Error ဖြစ်နေပါတယ် 😩 @BeBee2x ကိုလာပြောပေးပါနော်"
+      "OTP ယူလို့မရဘူးဖြစ်နေတယ် @BeBee2x လာကြည့်ပေးပါဦး"
     );
   }
 }

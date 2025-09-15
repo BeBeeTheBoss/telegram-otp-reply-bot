@@ -18,6 +18,7 @@
     "express": "^5.1.0",
     "node-telegram-bot-api": "^0.66.0",
     "nodemon": "^3.1.10",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "socks-proxy-agent": "^8.0.5"
   }
 }
